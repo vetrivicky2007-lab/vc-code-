@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VC Playground - Modern Online IDE</title>
+
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="dark-mode">
+
+    <!-- Toast Notifications Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Top Navbar -->
+    <header class="topbar">
+        <div class="topbar-left">
+            <div class="logo">
+                <span class="logo-icon"><i class="fa-solid fa-code"></i></span>
+                <span class="logo-text">VC Playground</span>
+                <span class="version-tag">v1.2</span>
+            </div>
+        </div>
+
+        <div class="topbar-center">
+            <div class="file-badge">
+                <i class="fa-regular fa-file-code"></i>
+                <span id="active-filename">main.vc</span>
+                <span class="saved-dot" id="save-status" title="Saved"></span>
+            </div>
+        </div>
+
+        <div class="topbar-right">
+            <div class="toolbar">
+                <button id="btn-run" class="btn btn-primary" onclick="runCode()" title="Run Program (Ctrl+Enter)">
+                    <i class="fa-solid fa-play"></i> <span>Run</span>
+                </button>
+                <button id="btn-stop" class="btn btn-danger" onclick="stopExecution()" disabled title="Stop Execution">
+                    <i class="fa-solid fa-stop"></i> <span>Stop</span>
+                </button>
+                <button id="btn-clear" class="btn btn-secondary" onclick="clearOutput()" title="Clear Output (Ctrl+L)">
+                    <i class="fa-solid fa-trash-can"></i> <span>Clear</span>
+                </button>
+                <button id="btn-theme" class="btn btn-icon" onclick="toggleTheme()" title="Toggle Theme">
+                    <i class="fa-solid fa-moon" id="theme-icon"></i>
+                </button>
+                <button id="btn-settings" class="btn btn-icon" onclick="openSettings()" title="Settings">
+                    <i class="fa-solid fa-gear"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="app-body">
+
+        <!-- Activity Bar (VS Code Style Far Left) -->
+        <aside class="activity-bar">
+            <div class="activity-top">
+                <button class="activity-item active" data-panel="explorer" title="Explorer (Ctrl+Shift+E)" onclick="switchSidebarPanel('explorer')">
+                    <i class="fa-regular fa-folder-closed"></i>
+                </button>
+                <button class="activity-item" data-panel="search" title="Search (Ctrl+Shift+F)" onclick="switchSidebarPanel('search')">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </button>
+                <button class="activity-item" data-panel="examples" title="Examples" onclick="switchSidebarPanel('examples')">
+                    <i class="fa-solid fa-cubes"></i>
+                </button>
+                <button class="activity-item" data-panel="docs" title="Documentation" onclick="switchSidebarPanel('docs')">
+                    <i class="fa-solid fa-book-open"></i>
+                </button>
+            </div>
+            <div class="activity-bottom">
+                <button class="activity-item" title="Command Palette (Ctrl+Shift+P)" onclick="openCommandPalette()">
+                    <i class="fa-solid fa-terminal"></i>
+                </button>
+                <button class="activity-item" id="btn-toggle-sidebar" title="Toggle Sidebar" onclick="toggleSidebar()">
+                    <i class="fa-solid fa-angles-left" id="sidebar-toggle-icon"></i>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Sidebar Panel -->
+        <aside class="sidebar-panel" id="sidebar-panel">
+            
+            <!-- File Explorer View -->
+            <div class="panel-view active" id="view-explorer">
+                <div class="panel-header">
+                    <span class="panel-title">EXPLORER</span>
+                    <div class="panel-actions">
+                        <button onclick="createNewFile()" title="New File"><i class="fa-solid fa-file-circle-plus"></i></button>
+                    </div>
+                </div>
+                <div class="explorer-section">
+                    <div class="section-header">
+                        <i class="fa-solid fa-chevron-down"></i> PROJECT FILES
+                    </div>
+                    <ul class="file-list" id="file-list">
+                        <!-- Populated dynamically -->
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Search View -->
+            <div class="panel-view" id="view-search">
+                <div class="panel-header">
+                    <span class="panel-title">SEARCH</span>
+                </div>
+                <div class="search-box-container">
+                    <input type="text" id="search-input" placeholder="Search code..." oninput="handleSearch()">
+                </div>
+                <div class="search-results" id="search-results">
+                    <span class="empty-msg">Type to search across open file...</span>
+                </div>
+            </div>
+
+            <!-- Examples View -->
+            <div class="panel-view" id="view-examples">
+                <div class="panel-header">
+                    <span class="panel-title">VC EXAMPLES</span>
+                </div>
+                <div class="examples-list" id="examples-list">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+
+            <!-- Docs View -->
+            <div class="panel-view" id="view-docs">
+                <div class="panel-header">
+                    <span class="panel-title">DOCUMENTATION</span>
+                </div>
+                <div class="docs-content">
+                    <div class="doc-card">
+                        <h4>Variables & Printing</h4>
+                        <pre class="doc-code">x = 10
+@ x</pre>
+                    </div>
+                    <div class="doc-card">
+                        <h4>String Interpolation</h4>
+                        <pre class="doc-code">name = "VC"
+@ "Hello {name}"</pre>
+                    </div>
+                    <div class="doc-card">
+                        <h4>Functions</h4>
+                        <pre class="doc-code">func add(a, b) {
+    return a + b
+}
+@ add(5, 10)</pre>
+                    </div>
+                    <div class="doc-card">
+                        <h4>Control Flow</h4>
+                        <pre class="doc-code">if x > 5 {
+    @ "Greater"
+} else {
+    @ "Smaller"
+}</pre>
+                    </div>
+                    <div class="doc-card">
+                        <h4>Loops</h4>
+                        <pre class="doc-code">i = 0
+while i < 5 {
+    @ i
+    i = i + 1
+}</pre>
+                    </div>
+                </div>
+            </div>
+
+        </aside>
+
+        <!-- Vertical Resizer 1 (Sidebar - Workspace) -->
+        <div class="resizer horizontal-resizer" id="resizer-sidebar"></div>
+
+        <!-- Main Workspace (Tabs + Editor + Output) -->
+        <main class="workspace-container">
+            
+            <!-- Editor Tabs Header -->
+            <div class="tabbar">
+                <div class="tab-list" id="tab-list">
+                    <!-- Tabs rendered dynamically -->
+                </div>
+                <div class="tabbar-actions">
+                    <button class="new-tab-btn" onclick="createNewFile()" title="New File"><i class="fa-solid fa-plus"></i></button>
+                </div>
+            </div>
+
+            <!-- Workspace Split (Editor | Resizer | Output) -->
+            <div class="workspace-split" id="workspace-split">
+                
+                <!-- Monaco Editor Wrapper -->
+                <div class="editor-panel" id="editor-panel">
+                    <div id="editor"></div>
+                    
+                    <!-- Welcome Screen (Visible when no files are open) -->
+                    <div class="welcome-screen" id="welcome-screen" style="display: none;">
+                        <div class="welcome-card">
+                            <div class="welcome-icon"><i class="fa-solid fa-code"></i></div>
+                            <h2>Welcome to VC Playground</h2>
+                            <p>Fast, interactive online IDE for the VC Programming Language.</p>
+                            <div class="welcome-actions">
+                                <button class="btn btn-primary" onclick="createNewFile()"><i class="fa-solid fa-file-plus"></i> Create New File</button>
+                                <button class="btn btn-secondary" onclick="loadExample('fibonacci')"><i class="fa-solid fa-cubes"></i> Open Fibonacci Example</button>
+                                <button class="btn btn-secondary" onclick="switchSidebarPanel('docs')"><i class="fa-solid fa-book"></i> Read Documentation</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Vertical Resizer 2 (Editor - Output) -->
+                <div class="resizer horizontal-resizer" id="divider"></div>
+
+                <!-- Terminal Output Panel -->
+                <div class="output-panel" id="output-panel">
+                    
+                    <!-- Output Tabs Header -->
+                    <div class="output-header">
+                        <div class="output-tabs">
+                            <button class="output-tab active" data-tab="terminal" onclick="switchOutputTab('terminal')">
+                                <i class="fa-solid fa-terminal"></i> Output
+                            </button>
+                            <button class="output-tab" data-tab="tokens" onclick="switchOutputTab('tokens')">
+                                <i class="fa-solid fa-code-commit"></i> Tokens
+                            </button>
+                            <button class="output-tab" data-tab="ast" onclick="switchOutputTab('ast')">
+                                <i class="fa-solid fa-sitemap"></i> AST
+                            </button>
+                            <button class="output-tab" data-tab="variables" onclick="switchOutputTab('variables')">
+                                <i class="fa-solid fa-layer-group"></i> Variables
+                            </button>
+                        </div>
+                        <div class="output-actions">
+                            <span class="execution-time" id="exec-time"><i class="fa-regular fa-clock"></i> 0 ms</span>
+                            <button onclick="clearOutput()" title="Clear Console"><i class="fa-solid fa-trash-can"></i></button>
+                        </div>
+                    </div>
+
+                    <!-- Output Body Views -->
+                    <div class="output-body">
+                        <div class="output-view active" id="out-view-terminal">
+                            <pre id="output" class="terminal-text"><span class="term-info">> Ready to run VC program. Press ▶ Run or Ctrl+Enter.</span></pre>
+                        </div>
+                        <div class="output-view" id="out-view-tokens">
+                            <pre id="output-tokens" class="terminal-text"><span class="term-info">Token stream will be generated after running.</span></pre>
+                        </div>
+                        <div class="output-view" id="out-view-ast">
+                            <pre id="output-ast" class="terminal-text"><span class="term-info">Abstract Syntax Tree (AST) will appear here.</span></pre>
+                        </div>
+                        <div class="output-view" id="out-view-variables">
+                            <pre id="output-variables" class="terminal-text"><span class="term-info">Variable scope inspector placeholder.</span></pre>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </main>
+
+    </div>
+
+    <!-- Status Bar (VS Code Style Bottom Bar) -->
+    <footer class="status-bar">
+        <div class="status-left">
+            <span class="status-item"><i class="fa-solid fa-code-branch"></i> VC Language</span>
+            <span class="status-item"><i class="fa-solid fa-circle" id="backend-status-dot" style="color: #a6e3a1;"></i> <span id="backend-status-text">Backend Connected</span></span>
+        </div>
+        <div class="status-right">
+            <span class="status-item" id="cursor-position">Ln 1, Col 1</span>
+            <span class="status-item">Spaces: 4</span>
+            <span class="status-item">UTF-8</span>
+            <span class="status-item">VC v1.2</span>
+        </div>
+    </footer>
+
+    <!-- Settings Modal -->
+    <div class="modal-overlay" id="modal-settings">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-gear"></i> IDE Settings</h3>
+                <button class="modal-close" onclick="closeSettings()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="setting-row">
+                    <label for="setting-theme">Theme Mode</label>
+                    <select id="setting-theme" onchange="applySetting('theme', this.value)">
+                        <option value="vs-dark">Dark Mode (VS Code Dark)</option>
+                        <option value="vs">Light Mode (VS Code Light)</option>
+                    </select>
+                </div>
+                <div class="setting-row">
+                    <label for="setting-fontsize">Font Size (px)</label>
+                    <input type="number" id="setting-fontsize" min="10" max="32" value="14" onchange="applySetting('fontSize', parseInt(this.value))">
+                </div>
+                <div class="setting-row">
+                    <label for="setting-tabsize">Tab Size</label>
+                    <select id="setting-tabsize" onchange="applySetting('tabSize', parseInt(this.value))">
+                        <option value="2">2 Spaces</option>
+                        <option value="4" selected>4 Spaces</option>
+                        <option value="8">8 Spaces</option>
+                    </select>
+                </div>
+                <div class="setting-row">
+                    <label for="setting-wordwrap">Word Wrap</label>
+                    <select id="setting-wordwrap" onchange="applySetting('wordWrap', this.value)">
+                        <option value="off">Off</option>
+                        <option value="on" selected>On</option>
+                    </select>
+                </div>
+                <div class="setting-row">
+                    <label for="setting-minimap">Minimap</label>
+                    <select id="setting-minimap" onchange="applySetting('minimap', this.value === 'true')">
+                        <option value="true" selected>Enabled</option>
+                        <option value="false">Disabled</option>
+                    </select>
+                </div>
+                <div class="setting-row">
+                    <label for="setting-autosave">Auto Save</label>
+                    <select id="setting-autosave" onchange="applySetting('autoSave', this.value === 'true')">
+                        <option value="true" selected>Enabled (on blur)</option>
+                        <option value="false">Disabled</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="closeSettings()">Done</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Command Palette Modal -->
+    <div class="modal-overlay" id="modal-palette">
+        <div class="palette-card">
+            <div class="palette-input-wrap">
+                <i class="fa-solid fa-terminal"></i>
+                <input type="text" id="palette-input" placeholder="Type a command or search actions..." oninput="filterPaletteCommands()" onkeydown="handlePaletteKeydown(event)">
+            </div>
+            <ul class="palette-list" id="palette-list">
+                <!-- Populated dynamically -->
+            </ul>
+        </div>
+    </div>
+
+    <!-- Monaco Editor Loader -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.52.2/min/vs/loader.min.js"></script>
+    <script src="script.js"></script>
+
+</body>
+
+</html>
